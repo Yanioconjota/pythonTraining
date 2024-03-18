@@ -1,64 +1,34 @@
-
 import streamlit as st
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+import os
 
-#As Langchain team has been working aggresively on improving the tool, we can see a lot of changes happening every weeek,
-#As a part of it, the below import has been depreciated
-#from langchain.chat_models import ChatOpenAI
+# Set the Hugging Face API key as an environment variable
+os.environ["HUGGINGFACEHUB_API_TOKEN"] = "xxxxxxxxxxxxxxxx"
 
-#New import from langchain, which replaces the above
-from langchain_openai import ChatOpenAI
+model_name = "google/flan-t5-large"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 
-#import os
-#os.environ["OPENAI_API_KEY"] = "sk-xxxxxxxxxxxxxxxxx"
-
-
-from langchain.schema import (
-    AIMessage,
-    HumanMessage,
-    SystemMessage
-)
-
-# From here down is all the StreamLit UI
 st.set_page_config(page_title="LangChain Demo", page_icon=":robot:")
 st.header("Hey, I'm your Chat GPT")
 
-
-
 if "sessionMessages" not in st.session_state:
-     st.session_state.sessionMessages = [
-        SystemMessage(content="You are a helpful assistant.")
-    ]
-
-
+     st.session_state.sessionMessages = ["You are a helpful assistant."]
 
 def load_answer(question):
-
-    st.session_state.sessionMessages.append(HumanMessage(content=question))
-
-    assistant_answer  = chat.invoke(st.session_state.sessionMessages )
-
-    st.session_state.sessionMessages.append(AIMessage(content=assistant_answer.content))
-
-    return assistant_answer.content
-
+    inputs = tokenizer.encode("Question: " + question + " \n\nAnswer: ", return_tensors="pt", add_special_tokens=True)
+    reply_ids = model.generate(inputs, max_length=512, num_return_sequences=1, temperature=0.7)
+    answer = tokenizer.decode(reply_ids[0], skip_special_tokens=True)
+    return answer
 
 def get_text():
     input_text = st.text_input("You: ")
     return input_text
 
-
-chat = ChatOpenAI(temperature=0)
-
-
-
-
-user_input=get_text()
+user_input = get_text()
 submit = st.button('Generate')  
 
 if submit:
-    
     response = load_answer(user_input)
     st.subheader("Answer:")
-
     st.write(response)
-
