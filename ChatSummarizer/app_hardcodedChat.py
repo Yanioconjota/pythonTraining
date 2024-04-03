@@ -7,11 +7,6 @@ from langchain.chains.conversation.memory import (ConversationBufferMemory,
 																									ConversationBufferWindowMemory
 																									)
 
-#Session variables
-
-if 'conversation' not in st.session_state:
-    st.session_state['conversation'] = None
-
 #Header and Sidebar
 
 st.set_page_config(page_title="Chat Summarizer", page_icon='🤖')
@@ -25,34 +20,25 @@ if summarize_button:
 	summarize_placeholder = st.sidebar.write("Nice chatting with you 😊 :\n\n" + "Hello dude!")
 	
 import os
-os.environ["OPENAI_API_KEY"] = "sk-xxxxxxxxxxxx" #Please replace the key with your OpenAI API key
+os.environ["OPENAI_API_KEY"] = "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" #Please replace the key with your OpenAI API key
 
-def get_response(user_input):
-    
-    if st.session_state['conversation'] is None:
-        llm = OpenAI(
-                temperature=0,
-                model_name='gpt-3.5-turbo-instruct'
-        )
+def getResponse(userInput):
+    llm = OpenAI(
+            temperature=0,
+            model_name='gpt-3.5-turbo-instruct'
+    )
 
-        # conversation = ConversationChain(
-        #         llm=llm,
-        #         verbose=True,
-        #         memory=ConversationBufferMemory()
-        # )
-        
-        #Using session variable to store the conversation
-        st.session_state['conversation'] = ConversationChain(
-                llm=llm,
-                verbose=True,
-                memory=ConversationBufferMemory()
-        )
-    
-    # response = conversation.predict(input=user_input)
-    # print(conversation.memory.buffer)
-    
-    response = st.session_state['conversation'].predict(input=user_input)
-    print(st.session_state['conversation'].memory.buffer)
+    conversation = ConversationChain(
+            llm=llm,
+            verbose=True,
+            memory=ConversationBufferMemory()
+    )
+
+    conversation("Good morning AI!")
+    conversation("My name is Homero!")
+    conversation.predict(input="I live in Springfield, USA")
+    print(conversation.memory.buffer)
+    response = conversation.predict(input="What is my name?")
     
     return response
 
@@ -65,7 +51,7 @@ with container:
         user_input = st.text_area("Your message goes here", key='input', height=100)
         submit_button = st.form_submit_button(label="Send")
         if submit_button:
-            answer = get_response(user_input)
+            answer = getResponse(user_input)
             with response_container:
                 st.write(answer)
     
