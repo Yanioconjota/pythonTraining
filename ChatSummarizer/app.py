@@ -1,5 +1,5 @@
 import streamlit as st
-
+from streamlit_chat import message
 from langchain_openai import OpenAI
 from langchain.chains import ConversationChain
 from langchain.chains.conversation.memory import (ConversationBufferMemory, 
@@ -9,8 +9,13 @@ from langchain.chains.conversation.memory import (ConversationBufferMemory,
 
 #Session variables
 
+#Handles the conversation state
 if 'conversation' not in st.session_state:
     st.session_state['conversation'] = None
+
+#Handles the messages created on the resopnse_container 
+if 'messages' not in st.session_state:
+    st.session_state['messages'] = []
 
 #Header and Sidebar
 
@@ -25,7 +30,7 @@ if summarize_button:
 	summarize_placeholder = st.sidebar.write("Nice chatting with you 😊 :\n\n" + "Hello dude!")
 	
 import os
-os.environ["OPENAI_API_KEY"] = "sk-xxxxxxxxxxxx" #Please replace the key with your OpenAI API key
+os.environ["OPENAI_API_KEY"] = "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxx" #Please replace the key with your OpenAI API key
 
 def get_response(user_input):
     
@@ -34,12 +39,6 @@ def get_response(user_input):
                 temperature=0,
                 model_name='gpt-3.5-turbo-instruct'
         )
-
-        # conversation = ConversationChain(
-        #         llm=llm,
-        #         verbose=True,
-        #         memory=ConversationBufferMemory()
-        # )
         
         #Using session variable to store the conversation
         st.session_state['conversation'] = ConversationChain(
@@ -47,9 +46,6 @@ def get_response(user_input):
                 verbose=True,
                 memory=ConversationBufferMemory()
         )
-    
-    # response = conversation.predict(input=user_input)
-    # print(conversation.memory.buffer)
     
     response = st.session_state['conversation'].predict(input=user_input)
     print(st.session_state['conversation'].memory.buffer)
@@ -65,7 +61,17 @@ with container:
         user_input = st.text_area("Your message goes here", key='input', height=100)
         submit_button = st.form_submit_button(label="Send")
         if submit_button:
-            answer = get_response(user_input)
+            
+            #Appends every user input and model response to the session state and displays it in the UI
+            st.session_state['messages'].append(user_input)
+            model_response = get_response(user_input)
+            st.session_state['messages'].append(model_response)
+            #st.write(st.session_state['messages'])
+            
             with response_container:
-                st.write(answer)
+                for i in range(len(st.session_state['messages'])):
+                    if (i % 2) == 0:
+                        message(st.session_state['messages'][i], is_user=True, key=str(i) + '🙋')
+                    else:
+                        message(st.session_state['messages'][i], key=str(i) + '🤖')
     
